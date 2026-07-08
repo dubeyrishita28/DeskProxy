@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  deskproxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deskproxy-enterprise
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist database and vector store between container restarts
+      - deskproxy_data:/app/data
+      - deskproxy_logs:/app/logs
+    environment:
+      - LOG_LEVEL=INFO
+      - LOG_JSON=true
+      - SIMILARITY_THRESHOLD=0.72
+      - ANALYTICS_CACHE_TTL=300
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  deskproxy_data:
+    driver: local
+  deskproxy_logs:
+    driver: local
